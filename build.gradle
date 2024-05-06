@@ -52,6 +52,7 @@ dependencies {
     implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.12'
     // https://mvnrepository.com/artifact/org.reflections/reflections
     implementation group: 'org.reflections', name: 'reflections', version: '0.10.2'
+    implementation 'org.apache.commons:commons-csv:1.10.0'
     testImplementation platform('org.junit:junit-bom:5.9.1')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testImplementation 'org.apiguardian:apiguardian-api:1.1.2'
@@ -74,8 +75,6 @@ task integrationTest(type: Test) {
     testClassesDirs = sourceSets.integrationTest.output.classesDirs
     classpath = sourceSets.integrationTest.runtimeClasspath
     useJUnitPlatform()
-//    outputs.upToDateWhen { false }
-//    mustRunAfter test // 確実にユニットテスト後に実行される
 }
 
 check.dependsOn integrationTest

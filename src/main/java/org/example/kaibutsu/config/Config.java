@@ -9,11 +9,8 @@ public class Config {
     public String[] magatamaPipelines;
     public boolean dynamic;
     public int interval;
-
     public int retryCount;
-
     public String tsuchigumoPackage;
-
     public String magatamaPipelinesPackage;
 
     public static Config loadFromProperties(Properties properties) {
