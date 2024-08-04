@@ -14,7 +14,7 @@ public class SchedulerQueue {
         try {
             requestQueue.put(request);
         } catch (InterruptedException e) {
-            throw new SchedulerException(e.getMessage());
+            throw new SchedulerException(e.getMessage(), e);
         }
     }
 

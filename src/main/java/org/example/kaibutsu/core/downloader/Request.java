@@ -9,12 +9,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Request {
-    public String url;
-    public final String callbackMethodName;
-    public String method;
-    public Map<String, String> headers;
-    public String encoding;
-    public Map<String, String> options = new HashMap<>();
+    private String url;
+    private final String callbackMethodName;
+    private String method;
+    private Map<String, String> headers;
+    private String encoding;
+    private Map<String, String> options = new HashMap<>();
 
     public Request(String url, String callbackKey) {
         this.url = url;
@@ -32,6 +32,10 @@ public class Request {
         this.encoding = encoding;
     }
 
+    public Request cloneWithNewUrl(String newUrl) {
+        return new Request(newUrl, this.callbackMethodName, this.method, this.headers, this.encoding);
+    }
+
     public String getBaseUrl() {
         URI uri = null;
         try {
@@ -46,4 +50,11 @@ public class Request {
         return options.get(key);
     }
 
+    public String getUrl() {
+        return url;
+    }
+
+    public String getCallbackMethodName() {
+        return callbackMethodName;
+    }
 }

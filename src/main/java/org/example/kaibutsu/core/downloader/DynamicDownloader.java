@@ -6,7 +6,6 @@ import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
 import com.microsoft.playwright.options.LoadState;
 import com.microsoft.playwright.options.WaitUntilState;
-import org.example.kaibutsu.core.downloader.exception.DownloaderException;
 import reactor.core.publisher.Mono;
 
 public class DynamicDownloader implements Downloader {
@@ -25,20 +24,20 @@ public class DynamicDownloader implements Downloader {
             try {
                 sink.success(navigateAndExtract(request));
             } catch (Exception e) {
-                sink.error(new DownloaderException(request.url, "Failed to download using DynamicDownloader", e));
+                sink.error(new DownloaderException("Failed to download. Request: " + request, e));
             }
         });
     }
 
     private Response navigateAndExtract(Request request) {
         ensurePage();
-        com.microsoft.playwright.Response pwResponse = page.navigate(request.url, new Page.NavigateOptions().setWaitUntil(WaitUntilState.NETWORKIDLE));
+        com.microsoft.playwright.Response pwResponse = page.navigate(request.getUrl(), new Page.NavigateOptions().setWaitUntil(WaitUntilState.NETWORKIDLE));
         if (!pwResponse.ok()) {
-            throw new DownloaderException(request.url, "HTTP error: " + pwResponse.status());
+            throw new DownloaderException("Failed to navigate to URL: " + request.getUrl() + ". HTTP status: " + pwResponse.status());
         }
         page.waitForLoadState(LoadState.LOAD);
         String content = page.content();
-        return new Response(request.url, pwResponse.status(), pwResponse.headers(), content.getBytes(), request);
+        return new Response(request.getUrl(), content.getBytes(), request);
     }
 
     private void ensurePage() {
