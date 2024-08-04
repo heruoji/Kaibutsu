@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class QuoteTsuchigumo implements Tsuchigumo {
+
     public Request startRequest() {
         return new Request("https://quotes.toscrape.com", "parseMain");
     }

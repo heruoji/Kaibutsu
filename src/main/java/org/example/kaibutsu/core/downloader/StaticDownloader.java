@@ -27,7 +27,7 @@ public class StaticDownloader implements Downloader {
                 .uri(request.getUrl())
                 .exchangeToMono(clientResponse -> {
                     if (clientResponse.statusCode().isError()) {
-                        return clientResponse.createException().flatMap(ex -> Mono.error(new DownloaderException("ダウンロードに失敗しました。リクエスト：" + request, ex)));
+                        return clientResponse.createException().flatMap(ex -> Mono.error(new DownloaderException("レスポンスのステータスコードが不正です。リクエスト：" + request, ex)));
                     } else if (clientResponse.statusCode().is3xxRedirection()) {
                         String newUrl = clientResponse.headers().header("Location").stream().findFirst().orElse(null);
                         if (newUrl == null) {
@@ -46,7 +46,8 @@ public class StaticDownloader implements Downloader {
                                         request
                                 ));
                     }
-                });
+                })
+                .onErrorResume(e -> Mono.error(new DownloaderException("ダウンロード中にエラーが発生しました。リクエストURL：" + request.getUrl(), e)));
     }
 
     @Override

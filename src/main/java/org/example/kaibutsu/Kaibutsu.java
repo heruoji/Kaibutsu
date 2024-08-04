@@ -8,17 +8,22 @@ import org.example.kaibutsu.core.engine.GodzillaEngine;
 import org.example.kaibutsu.core.magatamapipeline.MagatamaPipeline;
 import org.example.kaibutsu.core.scheduler.Scheduler;
 import org.example.kaibutsu.core.tsuchigumo.Tsuchigumo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.List;
 
 public class Kaibutsu {
+    private static final Logger logger = LoggerFactory.getLogger(Kaibutsu.class);
+
     public static void main(String[] args) {
         run(args[0]);
     }
 
     public static void run(String config) {
         if (config.isEmpty()) {
+            logger.error("設定ファイル名が指定されていません。プログラムを実行するには有効な設定ファイル名を引数に指定してください。");
             throw new IllegalArgumentException("設定ファイル名が指定されていません。");
         }
         try {
@@ -26,7 +31,7 @@ public class Kaibutsu {
             godzillaEngine.run();
         } catch (Exception e) {
             Thread.currentThread().interrupt();
-            System.err.println("エラーが発生しました: " + e.getMessage());
+            logger.error("エンジンの初期化または実行中にエラーが発生しました: ", e);
         }
     }
 

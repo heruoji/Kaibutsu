@@ -7,9 +7,9 @@ import org.jsoup.select.Elements;
 import java.util.Map;
 
 public class Response {
-    private String url;
-    private byte[] body;
-    private Request request;
+    private final String url;
+    private final byte[] body;
+    private final Request request;
 
     public Response(String url, byte[] body, Request request) {
         this.url = url;
@@ -32,5 +32,9 @@ public class Response {
 
     public String getUrl() {
         return this.url;
+    }
+
+    public Request getRequest() {
+        return request;
     }
 }
