@@ -143,7 +143,6 @@ tsuchigumo=org.example.kaibutsu.tsuchigumo.QuoteTsuchigumo
 dynamic=false
 magatamaPipelines=PrintPipeline,WriteCsvAuthor
 interval=1000
-retryCount=3
 tsuchigumoPackage=org.example.kaibutsu.tsuchigumo
 magatamaPipelinesPackage=org.example.kaibutsu.magatamapipeline
 ```

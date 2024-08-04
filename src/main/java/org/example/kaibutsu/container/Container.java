@@ -1,9 +1,5 @@
 package org.example.kaibutsu.container;
 
-import org.example.kaibutsu.container.exception.MagatamaPipelineInstantiationException;
-import org.example.kaibutsu.container.exception.MagatamaPipelineNotFoundException;
-import org.example.kaibutsu.container.exception.TsuchigumoInstantiationException;
-import org.example.kaibutsu.container.exception.TsuchigumoNotFoundException;
 import org.example.kaibutsu.core.downloader.Downloader;
 import org.example.kaibutsu.core.downloader.DynamicDownloader;
 import org.example.kaibutsu.core.downloader.StaticDownloader;
@@ -26,7 +22,7 @@ public class Container {
                 return instantiateTsuchigumo(clazz);
             }
         }
-        throw new TsuchigumoNotFoundException(tsuchigumoName, "指定された名前のTsuchigumoが見つかりませんでした：" + tsuchigumoName);
+        throw new ContainerException("指定された名前のTsuchigumoが見つかりませんでした。名前：" + tsuchigumoName);
     }
 
     private static Set<Class<? extends Tsuchigumo>> getTsuchigumoClasses(String targetPackage) {
@@ -38,7 +34,7 @@ public class Container {
             return (Tsuchigumo) clazz.getConstructor().newInstance();
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
                  NoSuchMethodException e) {
-            throw new TsuchigumoInstantiationException(clazz.getSimpleName(), "Tsuchigumoの初期化に失敗しました。", e);
+            throw new ContainerException("Tsuchigumoの初期化に失敗しました。", e);
         }
     }
 
@@ -72,7 +68,7 @@ public class Container {
                 return instantiateMagatamaPipeline(clazz);
             }
         }
-        throw new MagatamaPipelineNotFoundException(name, "指定された名前のMagatamaPipelineが見つかりませんでした：" + name);
+        throw new ContainerException("指定された名前のMagatamaPipelineが見つかりませんでした。名前：" + name);
     }
 
     private static Set<Class<? extends MagatamaPipeline>> getMagatamaPipelineClasses(String targetPackage) {
@@ -84,7 +80,7 @@ public class Container {
             return (MagatamaPipeline) clazz.getConstructor().newInstance();
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
                  NoSuchMethodException e) {
-            throw new MagatamaPipelineInstantiationException(clazz.getSimpleName(), "MagatamaPipelineの初期化に失敗しました。", e);
+            throw new ContainerException("MagatamaPipelineの初期化に失敗しました", e);
         }
     }
 

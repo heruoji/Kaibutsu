@@ -1,13 +1,7 @@
 package org.example.kaibutsu.core.downloader;
 
-import org.example.kaibutsu.core.downloader.exception.ConnectionException;
-import org.example.kaibutsu.core.downloader.exception.DownloaderException;
-import org.example.kaibutsu.core.downloader.exception.HttpErrorException;
-import org.example.kaibutsu.core.downloader.exception.TooManyRedirectsException;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientRequestException;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 
 public class StaticDownloader implements Downloader {
@@ -17,7 +11,7 @@ public class StaticDownloader implements Downloader {
 
     private final WebClient webClient = WebClient.builder()
             .exchangeStrategies(ExchangeStrategies.builder()
-                    .codecs(configurer -> configurer
+                    .codecs(configure -> configure
                             .defaultCodecs()
                             .maxInMemorySize(MAX_IN_MEMORY_SIZE))
                     .build())
@@ -30,46 +24,31 @@ public class StaticDownloader implements Downloader {
 
     private Mono<Response> download(Request request, int redirectCount) {
         return webClient.get()
-                .uri(request.url)
+                .uri(request.getUrl())
                 .exchangeToMono(clientResponse -> {
                     if (clientResponse.statusCode().isError()) {
-                        return clientResponse.createException().flatMap(ex -> Mono.error(new HttpErrorException(request.url, clientResponse.statusCode().value(), ex)));
+                        return clientResponse.createException().flatMap(ex -> Mono.error(new DownloaderException("レスポンスのステータスコードが不正です。リクエスト：" + request, ex)));
                     } else if (clientResponse.statusCode().is3xxRedirection()) {
                         String newUrl = clientResponse.headers().header("Location").stream().findFirst().orElse(null);
                         if (newUrl == null) {
-                            return Mono.error(new HttpErrorException(request.url, clientResponse.statusCode().value(), new Exception("リダイレクトURLが見つかりません。")));
+                            return Mono.error(new DownloaderException("リダイレクト先のURLが見つかりませんでした。リクエスト：" + request));
                         }
                         if (redirectCount >= MAX_REDIRECTS) {
-                            return Mono.error(new TooManyRedirectsException(request.url));
+                            return Mono.error(new DownloaderException("リダイレクトの上限回数に達しました。リクエスト：" + request));
                         }
-                        request.url = newUrl;
-                        return download(request, redirectCount + 1);
+                        Request newRequest = request.cloneWithNewUrl(newUrl);
+                        return download(newRequest, redirectCount + 1);
                     } else {
                         return clientResponse.bodyToMono(byte[].class)
                                 .map(body -> new Response(
-                                        request.url,
-                                        clientResponse.statusCode().value(),
-                                        clientResponse.headers().asHttpHeaders().toSingleValueMap(),
+                                        request.getUrl(),
                                         body,
                                         request
                                 ));
                     }
                 })
-                .onErrorMap(originalException -> handleException(originalException, request));
+                .onErrorResume(e -> Mono.error(new DownloaderException("ダウンロード中にエラーが発生しました。リクエストURL：" + request.getUrl(), e)));
     }
-
-    private Throwable handleException(Throwable originalException, Request request) {
-        return switch (originalException) {
-            case DownloaderException ignored -> originalException;
-            case WebClientResponseException responseException ->
-                    new HttpErrorException(request.url, responseException.getStatusCode().value(), originalException);
-            case WebClientRequestException webClientRequestException ->
-                    new ConnectionException(request.url, originalException);
-            case null, default ->
-                    new DownloaderException(request.url, "不明なエラーが発生しました。", originalException);
-        };
-    }
-
 
     @Override
     public void close() {
