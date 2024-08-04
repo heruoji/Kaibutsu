@@ -7,34 +7,30 @@ import org.jsoup.select.Elements;
 import java.util.Map;
 
 public class Response {
-    public String url;
-    public int status;
-    public Map<String, String> headers;
-    public byte[] body;
-    public Request request;
+    private String url;
+    private byte[] body;
+    private Request request;
 
-    public Response(String url, int status, Map<String, String> headers, byte[] body, Request request) {
+    public Response(String url, byte[] body, Request request) {
         this.url = url;
-        this.status = status;
-        this.headers = headers;
         this.body = body;
         this.request = request;
     }
 
-    public Elements select(String query) {
+    public Elements getJsoupElements(String query) {
         Document doc = Jsoup.parse(new String(body), request.getBaseUrl());
         return doc.select(query);
     }
 
-    public Document parse() {
+    public Document getJsoupDocument() {
         return Jsoup.parse(new String(body), request.getBaseUrl());
     }
 
-    public String getOption(String key) {
-        return this.request.getOption(key);
+    public String getCallbackKey() {
+        return this.request.getCallbackMethodName();
     }
 
-    public String getCallbackKey() {
-        return this.request.callbackMethodName;
+    public String getUrl() {
+        return this.url;
     }
 }

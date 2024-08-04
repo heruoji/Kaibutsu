@@ -1,4 +1,4 @@
-package org.example.kaibutsu.config.exception;
+package org.example.kaibutsu.config;
 
 public class ConfigException extends RuntimeException{
 

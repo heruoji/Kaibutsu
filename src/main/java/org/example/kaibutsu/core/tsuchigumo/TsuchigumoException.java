@@ -1,4 +1,4 @@
-package org.example.kaibutsu.core.tsuchigumo.exception;
+package org.example.kaibutsu.core.tsuchigumo;
 
 public class TsuchigumoException extends RuntimeException {
     public TsuchigumoException(String message) {

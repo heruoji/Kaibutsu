@@ -5,6 +5,6 @@ import org.junit.jupiter.api.Test;
 class KaibutsuTest {
     @Test
     void crawlQuote() {
-        Kaibutsu.crawl("quote");
+        Kaibutsu.run("quote");
     }
 }

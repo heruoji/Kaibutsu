@@ -1,4 +1,4 @@
-package org.example.kaibutsu.container.exception;
+package org.example.kaibutsu.container;
 
 public class ContainerException extends RuntimeException{
 
