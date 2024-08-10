@@ -19,25 +19,25 @@ public class DynamicDownloader implements Downloader {
     }
 
     @Override
-    public Mono<Response> download(Request request) {
+    public Mono<DownloaderResponse> download(DownloaderRequest downloaderRequest) {
         return Mono.create(sink -> {
             try {
-                sink.success(navigateAndExtract(request));
+                sink.success(navigateAndExtract(downloaderRequest));
             } catch (Exception e) {
-                sink.error(new DownloaderException("Failed to download. Request: " + request, e));
+                sink.error(new DownloaderException("Failed to download. Request: " + downloaderRequest, e));
             }
         });
     }
 
-    private Response navigateAndExtract(Request request) {
+    private DownloaderResponse navigateAndExtract(DownloaderRequest downloaderRequest) {
         ensurePage();
-        com.microsoft.playwright.Response pwResponse = page.navigate(request.getUrl(), new Page.NavigateOptions().setWaitUntil(WaitUntilState.NETWORKIDLE));
+        com.microsoft.playwright.Response pwResponse = page.navigate(downloaderRequest.getUrl(), new Page.NavigateOptions().setWaitUntil(WaitUntilState.NETWORKIDLE));
         if (!pwResponse.ok()) {
-            throw new DownloaderException("Failed to navigate to URL: " + request.getUrl() + ". HTTP status: " + pwResponse.status());
+            throw new DownloaderException("Failed to navigate to URL: " + downloaderRequest.getUrl() + ". HTTP status: " + pwResponse.status());
         }
         page.waitForLoadState(LoadState.LOAD);
         String content = page.content();
-        return new Response(request.getUrl(), content.getBytes(), request);
+        return new DownloaderResponse(downloaderRequest.getUrl(), content.getBytes(), downloaderRequest);
     }
 
     private void ensurePage() {

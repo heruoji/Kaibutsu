@@ -3,9 +3,9 @@ package org.example.kaibutsu.container;
 import org.example.kaibutsu.core.downloader.Downloader;
 import org.example.kaibutsu.core.downloader.DynamicDownloader;
 import org.example.kaibutsu.core.downloader.StaticDownloader;
-import org.example.kaibutsu.core.magatamapipeline.MagatamaPipeline;
-import org.example.kaibutsu.core.magatamapipeline.PrintPipeline;
-import org.example.kaibutsu.core.tsuchigumo.Tsuchigumo;
+import org.example.kaibutsu.core.itempipeline.ItemPipeline;
+import org.example.kaibutsu.core.itempipeline.Printer;
+import org.example.kaibutsu.core.parser.Parser;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -15,26 +15,26 @@ import java.util.Set;
 
 public class Container {
 
-    public static Tsuchigumo buildTsuchigumo(String targetPackage, String tsuchigumoName) {
-        Set<Class<? extends Tsuchigumo>> tsuchigumoClasses = getTsuchigumoClasses(targetPackage);
-        for (Class<? extends Tsuchigumo> clazz : tsuchigumoClasses) {
-            if (clazz.getSimpleName().equals(tsuchigumoName)) {
-                return instantiateTsuchigumo(clazz);
+    public static Parser buildParser(String targetPackage, String parserName) {
+        Set<Class<? extends Parser>> parserClasses = getParserClasses(targetPackage);
+        for (Class<? extends Parser> clazz : parserClasses) {
+            if (clazz.getSimpleName().equals(parserName)) {
+                return instantiateParser(clazz);
             }
         }
-        throw new ContainerException("指定された名前のTsuchigumoが見つかりませんでした。名前：" + tsuchigumoName);
+        throw new ContainerException("指定された名前のParserが見つかりませんでした。名前：" + parserName);
     }
 
-    private static Set<Class<? extends Tsuchigumo>> getTsuchigumoClasses(String targetPackage) {
-        return ClassFinder.getSubClasses(targetPackage, Tsuchigumo.class);
+    private static Set<Class<? extends Parser>> getParserClasses(String targetPackage) {
+        return ClassFinder.getSubClasses(targetPackage, Parser.class);
     }
 
-    private static Tsuchigumo instantiateTsuchigumo(Class<?> clazz) {
+    private static Parser instantiateParser(Class<?> clazz) {
         try {
-            return (Tsuchigumo) clazz.getConstructor().newInstance();
+            return (Parser) clazz.getConstructor().newInstance();
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
                  NoSuchMethodException e) {
-            throw new ContainerException("Tsuchigumoの初期化に失敗しました。", e);
+            throw new ContainerException("Parserの初期化に失敗しました。", e);
         }
     }
 
@@ -46,41 +46,41 @@ public class Container {
         }
     }
 
-    public static List<MagatamaPipeline> buildMagatamaPipelines(String targetPackage, List<String> names) {
+    public static List<ItemPipeline> buildItemPipelines(String targetPackage, List<String> names) {
         if (names.isEmpty()) {
             return Collections.emptyList();
         }
-        List<MagatamaPipeline> magatamaPipelines = new ArrayList<>();
+        List<ItemPipeline> itemPipelines = new ArrayList<>();
         for (String name : names) {
-            MagatamaPipeline magatamaPipeline = buildMagatamaPipeline(targetPackage, name);
-            magatamaPipelines.add(magatamaPipeline);
+            ItemPipeline itemPipeline = buildItemPipeline(targetPackage, name);
+            itemPipelines.add(itemPipeline);
         }
-        return magatamaPipelines;
+        return itemPipelines;
     }
 
-    private static MagatamaPipeline buildMagatamaPipeline(String targetPackage, String name) {
-        if (name.equals("PrintPipeline")) {
-            return new PrintPipeline();
+    private static ItemPipeline buildItemPipeline(String targetPackage, String name) {
+        if (name.equals("Printer")) {
+            return new Printer();
         }
-        Set<Class<? extends MagatamaPipeline>> magatamaPipelineClasses = getMagatamaPipelineClasses(targetPackage);
-        for (Class<? extends MagatamaPipeline> clazz : magatamaPipelineClasses) {
+        Set<Class<? extends ItemPipeline>> itemPipelineClasses = getItemPipelineClasses(targetPackage);
+        for (Class<? extends ItemPipeline> clazz : itemPipelineClasses) {
             if (clazz.getSimpleName().equals(name)) {
-                return instantiateMagatamaPipeline(clazz);
+                return instantiateItemPipeline(clazz);
             }
         }
-        throw new ContainerException("指定された名前のMagatamaPipelineが見つかりませんでした。名前：" + name);
+        throw new ContainerException("指定された名前のItemPipelineが見つかりませんでした。名前：" + name);
     }
 
-    private static Set<Class<? extends MagatamaPipeline>> getMagatamaPipelineClasses(String targetPackage) {
-        return ClassFinder.getSubClasses(targetPackage, MagatamaPipeline.class);
+    private static Set<Class<? extends ItemPipeline>> getItemPipelineClasses(String targetPackage) {
+        return ClassFinder.getSubClasses(targetPackage, ItemPipeline.class);
     }
 
-    private static MagatamaPipeline instantiateMagatamaPipeline(Class<?> clazz) {
+    private static ItemPipeline instantiateItemPipeline(Class<?> clazz) {
         try {
-            return (MagatamaPipeline) clazz.getConstructor().newInstance();
+            return (ItemPipeline) clazz.getConstructor().newInstance();
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
                  NoSuchMethodException e) {
-            throw new ContainerException("MagatamaPipelineの初期化に失敗しました", e);
+            throw new ContainerException("ItemPipelineの初期化に失敗しました", e);
         }
     }
 

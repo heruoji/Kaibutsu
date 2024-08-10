@@ -1,5 +1,6 @@
 package org.example.kaibutsu;
 
+import org.example.kaibutsu.application.Kaibutsu;
 import org.junit.jupiter.api.Test;
 
 class KaibutsuTest {

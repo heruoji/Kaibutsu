@@ -1,6 +1,6 @@
 package org.example.kaibutsu.core.scheduler;
 
-import org.example.kaibutsu.core.downloader.Request;
+import org.example.kaibutsu.core.downloader.DownloaderRequest;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Sinks;
 
@@ -10,9 +10,9 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class Scheduler {
 
-    private final BlockingQueue<Request> requestQueue = new LinkedBlockingQueue<>(100);
+    private final BlockingQueue<DownloaderRequest> downloaderRequestQueue = new LinkedBlockingQueue<>(100);
 
-    private final Sinks.Many<Request> sink = Sinks.many().unicast().onBackpressureBuffer();
+    private final Sinks.Many<DownloaderRequest> sink = Sinks.many().unicast().onBackpressureBuffer();
 
     private final int intervalMillSeconds;
 
@@ -20,24 +20,24 @@ public class Scheduler {
         this.intervalMillSeconds = intervalMillSeconds;
     }
 
-    public Flux<Request> requestStream() {
+    public Flux<DownloaderRequest> requestStream() {
         return sink.asFlux()
                 .delayElements(Duration.ofMillis(intervalMillSeconds));
     }
 
-    public void addRequest(Request request) {
+    public void addRequest(DownloaderRequest downloaderRequest) {
         try {
-            requestQueue.put(request);
+            downloaderRequestQueue.put(downloaderRequest);
         } catch (InterruptedException e) {
-            throw new SchedulerException("リクエストのスケジューラーへの追加に失敗しました。\nリクエスト：" + request + "\nエラーメッセージ：" + e.getMessage(), e);
+            throw new SchedulerException("リクエストのスケジューラーへの追加に失敗しました。\nリクエスト：" + downloaderRequest + "\nエラーメッセージ：" + e.getMessage(), e);
         }
         emitRequests();
     }
 
     private void emitRequests() {
-        Request nextRequest;
-        while ((nextRequest = requestQueue.poll()) != null) {
-            sink.emitNext(nextRequest, ((signalType, emitResult) -> Sinks.EmitResult.FAIL_OVERFLOW.equals(emitResult)));
+        DownloaderRequest nextDownloaderRequest;
+        while ((nextDownloaderRequest = downloaderRequestQueue.poll()) != null) {
+            sink.emitNext(nextDownloaderRequest, ((signalType, emitResult) -> Sinks.EmitResult.FAIL_OVERFLOW.equals(emitResult)));
         }
     }
 
@@ -47,6 +47,6 @@ public class Scheduler {
     }
 
     public boolean isEmpty() {
-        return requestQueue.isEmpty();
+        return downloaderRequestQueue.isEmpty();
     }
 }
