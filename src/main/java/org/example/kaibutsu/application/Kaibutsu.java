@@ -1,13 +1,13 @@
-package org.example.kaibutsu;
+package org.example.kaibutsu.application;
 
-import org.example.kaibutsu.config.Config;
-import org.example.kaibutsu.config.ConfigLoader;
+import org.example.kaibutsu.application.config.Config;
+import org.example.kaibutsu.application.config.ConfigLoader;
 import org.example.kaibutsu.container.Container;
 import org.example.kaibutsu.core.downloader.Downloader;
-import org.example.kaibutsu.core.engine.GodzillaEngine;
-import org.example.kaibutsu.core.magatamapipeline.MagatamaPipeline;
+import org.example.kaibutsu.core.engine.Engine;
+import org.example.kaibutsu.core.itempipeline.ItemPipeline;
 import org.example.kaibutsu.core.scheduler.Scheduler;
-import org.example.kaibutsu.core.tsuchigumo.Tsuchigumo;
+import org.example.kaibutsu.core.parser.Parser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,21 +27,21 @@ public class Kaibutsu {
             throw new IllegalArgumentException("設定ファイル名が指定されていません。");
         }
         try {
-            GodzillaEngine godzillaEngine = initializeEngine(config);
-            godzillaEngine.run();
+            Engine engine = initializeEngine(config);
+            engine.run();
         } catch (Exception e) {
             Thread.currentThread().interrupt();
             logger.error("エンジンの初期化または実行中にエラーが発生しました: ", e);
         }
     }
 
-    private static GodzillaEngine initializeEngine(String configName) {
+    private static Engine initializeEngine(String configName) {
         Config config = ConfigLoader.load(configName);
         Scheduler scheduler = new Scheduler(config.intervalMillSeconds);
         Downloader downloader = Container.buildDownloader(config.dynamic);
-        Tsuchigumo tsuchigumo = Container.buildTsuchigumo(config.tsuchigumoPackage, config.tsuchigumo);
-        List<MagatamaPipeline> magatamaPipelines = Container.buildMagatamaPipelines(config.magatamaPipelinesPackage, Arrays.asList(config.magatamaPipelines));
+        Parser parser = Container.buildParser(config.parserPackage, config.parser);
+        List<ItemPipeline> itemPipelines = Container.buildItemPipelines(config.itemPipelinesPackage, Arrays.asList(config.itemPipelines));
 
-        return new GodzillaEngine(scheduler, downloader, tsuchigumo, magatamaPipelines);
+        return new Engine(scheduler, downloader, parser, itemPipelines);
     }
 }

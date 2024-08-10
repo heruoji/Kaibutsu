@@ -1,80 +1,86 @@
-# Kaibutsu - A Java Web Crawler Framework
+## モジュール構成
+Kaibutsuフレームワークは、以下の主要なモジュールで構成されています：
+- Applicationモジュール：エントリーポイントや設定の読み込み、エンジンの初期化を担当。
+- Containerモジュール：依存性注入（DI）コンテナとして機能し、主要なコンポーネントを動的にインスタンス化。
+- Coreモジュール：実際のクローリング処理を行うメインのモジュール。
 
-## 概要
-Kaibutsuは、Javaで開発された高性能Webクローラーフレームワークです。Scrapyからインスピレーションを得て、柔軟なスケジューリング、エラーハンドリング、プラグイン式のコンポーネントを特徴としています。
+全体のパッケージ構成は、以下になります。
+```
+├── application/
+├── container/
+└── core/
+    ├── downloader/
+    ├── engine/
+    ├── magatamapipeline/
+    ├── scheduler/
+    └── tsuchigumo/
+```
 
-## 主な特徴
-- **非同期・並列処理:** Reactorを使用した非同期処理をサポートし、高いスループットを実現します。
-- **プラグインアーキテクチャ:** ダウンローダー、スケジューラー、パーサー（土蜘蛛）、抽出データ（勾玉）、抽出データパイプライン（勾玉パイプライン）など、多様なコンポーネントをカスタマイズ可能です。
+## Coreモジュールのアーキテクチャ
+Coreモジュールは、実際にクロール処理を行う中心のモジュールで、以下のコンポーネントから構成されています。
+- Engine：各コンポーネントを制御してクローリング処理を行います。
+- Downloader：指定されたURLのWebページを取得します。静的ページ取得用のStaticDownloaderと、動的ページ取得用のDynamicDownloaderを用意しました。
+- Scheduler：Downlaoderへ渡すリクエストの管理を行います。
+- Parser：Downloaderが取得したWebページから、データと新しいリクエストをスクレイプします。
+- ItemPipeline：取得したデータの後処理を行います。データのクリーニングやファイルへの出力などを行うことができます。
 
-## アーキテクチャの詳細
-### コンポーネント概要
-Kaibutsuは複数のコアコンポーネントによって構成されています:
-- **アプリケーションクラス (`Kaibutsu`)**: クローリングプロセスの起点として機能し、設定ファイルを読み込んで`GodzillaEngine`を初期化、実行を開始します。
-- **エンジンクラス (`GodzillaEngine`)**: クローリング操作の中核を担い、ダウンローダー、スケジューラー、パーサー、データパイプラインの調整を行います。
-- **ダウンローダークラス (`Downloader`)**: HTTPリクエストを非同期に実行し、Webページのレスポンスを取得します。
-- **スケジューラークラス (`Scheduler`)**: HTTPリクエストの管理とスケジューリングを担当し、ダウンローダーにHTTPリクエストを送信します。
-- **パーサークラス（`Tsuchigumo`)**: ダウンローダーで取得したHTTPレスポンスからデータを解析・抽出し、必要に応じて新たなHTTPリクエストを生成します。
-- **データクラス（`Magatama`）**: パーサークラスで抽出するデータクラスを表します。
-- **データパイプラインクラス (`MagatamaPipeline`)**: パーサークラスで抽出したデータを受け取り、必要に応じてさらなる処理を行います。
+## クロール処理の流れ
+Coreモジュールのクロール処理全体の流れは、以下になります。
 
-### データフロー
-1. **初期化**: `GodzillaEngine`とそのコンポーネントが初期化されます。
-2. **リクエストの生成とスケジューリング**: 土蜘蛛が最初のリクエストを生成し、スケジューラーに送ります。
-3. **ダウンロード**: スケジューラーがダウンローダーにリクエストを送信し、レスポンスを取得します。
-4. **解析**: 土蜘蛛が上記レスポンスを解析してデータを抽出し、新たなリクエストを生成します。
-5. **データ処理**: 上記で抽出されたデータはデータパイプラインで処理されます。
-6. **終了**: 全リクエストの処理が完了すると、エンジンはシャットダウンします。
+1. EngineがParserで指定した最初のリクエストを、Schedulerに渡します。
+2. Schedulerはリクエストを管理し、指定された間隔でEngineに渡します。Engineは、Downloaderにリクエストを渡します。
+3. リクエストを受け取ったDownloaderは、Webページを取得して、Engineに返します。
+4. Engineは、Downlaoderから受け取ったWebページをParserに渡します。
+5. Parserは、Webページからデータ（item）と新しいクロール先のURLをスクレイプします。それらをまとめてEngineに返します。
+6. EngineはParserから受け取ったスクレイプ結果のうち、新しいリクエストをSchedulerに渡し、データをItemPipelineに渡します。
+7. ItemPipelineでは、DB保存やファイル出力など任意のデータ後処理を行います。
+8. Schedulerからリクエストがなくなるまで、2に戻ります。
 
-## 実装例
-以下は、[`quotes.toscrape.com`](https://quotes.toscrape.com/)というサイトから著者情報を収集するためのカスタムクラスの例です
+フレームワーク利用者側でParser、Item、ItemPipelineの実装クラスを用意することで、任意のWebサイトをクロールすることができます。
 
-### カスタム土蜘蛛クラス
+## フレームワーク利用方法
+例として、https://quotes.toscrape.com/　に載っている著者の名言をスクレイプし、ファイルに出力する処理を行いたいと思います。
+フレームワーク利用者側で以下のファイルを用意する必要があります。
+1. Parser実装クラス
+2. Item実装クラス（抽出したいデータのDTO）
+3. ItemPipeline実装クラス（抽出したデータの後処理の実装クラス）
+4. 設定ファイル
+
+### Parser実装クラス
+Parser実装クラスでは、実際のWebページに対するスクレイプ処理を実装します。使い方はScrapyにおけるSpiderとほとんど同じです。
+startRequestは、クロールを開始するページのDownloaderRequestクラスを返します。
+parseMainとparseAuthorはユーザー側で実装したメソッドであり、メソッド名に決まりはありません。DownloaderRequestでクロール対象のURLと、そのページに対して実行するメソッド名を指定します。例えば、startRequestでは、https://quotes.toscrape.com　というページに対して、parseMainメソッドでスクレイプを行うように指定しており、同じようにparseMainメソッドでは、各著者ページのリンクに対して、parseAuthorメソッドを実行するように指定しています。
 ```java
-package org.example.kaibutsu.tsuchigumo;
+public class QuoteParser implements Parser {
 
-import org.example.kaibutsu.core.downloader.Request;
-import org.example.kaibutsu.core.downloader.Response;
-import org.example.kaibutsu.core.tsuchigumo.Tsuchigumo;
-import org.example.kaibutsu.core.tsuchigumo.TsuchigumoResponse;
-import org.example.kaibutsu.magatama.Author;
-
-import java.util.List;
-import java.util.stream.Collectors;
-
-public class QuoteTsuchigumo implements Tsuchigumo {
-    public Request startRequest() {
-        return new Request("https://quotes.toscrape.com", "parseMain");
+    public DownloaderRequest startRequest() {
+        return new DownloaderRequest("https://quotes.toscrape.com", "parseMain");
     }
 
-    public TsuchigumoResponse parseMain(Response response, TsuchigumoResponse.TsuchigumoResponseBuilder builder) {
-        List<Request> authorRequests = response.select(".author + a").stream().map(link -> new Request(link.absUrl("href"), "parseAuthor")).collect(Collectors.toList());
-        List<Request> paginationRequests = response.select("li.next a").stream().map(link -> new Request(link.absUrl("href"), "parseMain")).toList();
-        authorRequests.addAll(paginationRequests);
+    public ParserResponse parseMain(DownloaderResponse downloaderResponse) {
+        List<DownloaderRequest> newDownloaderRequests = downloaderResponse.getJsoupElements(".author + a").stream().map(link -> new DownloaderRequest(link.absUrl("href"), "parseAuthor")).collect(Collectors.toList());
+        newDownloaderRequests.addAll(downloaderResponse.getJsoupElements("li.next a").stream().map(link -> new DownloaderRequest(link.absUrl("href"), "parseMain")).toList());
 
-        return builder.requests(authorRequests).build();
+        return ParserResponse.fromNewRequests(newDownloaderRequests);
     }
 
-    public TsuchigumoResponse parseAuthor(Response response, TsuchigumoResponse.TsuchigumoResponseBuilder builder) {
-        String name = response.select("h3.author-title").text();
-        String birthday = response.select(".author-born-date").text();
-        String bio = response.select(".author-description").text();
+    public ParserResponse parseAuthor(DownloaderResponse downloaderResponse) {
+        String name = downloaderResponse.getJsoupElements("h3.author-title").text();
+        String birthday = downloaderResponse.getJsoupElements(".author-born-date").text();
+        String bio = downloaderResponse.getJsoupElements(".author-description").text();
         Author author = new Author();
         author.name = name;
         author.birthday = birthday;
         author.bio = bio;
-        return builder.addMagatama(author).build();
+        return ParserResponse.fromItems(Collections.singletonList(author));
     }
 }
 ```
 
-### カスタム勾玉クラス
+### Item実装クラス
+Item実装クラスは、取得したいデータのDTOクラスです。今回の場合は、著者の名前、誕生日、紹介文を取得します。
 ```java
-package org.example.kaibutsu.magatama;
-
-import org.example.kaibutsu.core.tsuchigumo.Magatama;
-
-public class Author implements Magatama {
+public class Author implements Item {
     public String name;
     public String birthday;
     public String bio;
@@ -86,21 +92,11 @@ public class Author implements Magatama {
 }
 ```
 
-### カスタムデータパイプラインクラス
+### ItemPipeline実装クラス
+ItemPipeline実装クラスでは、取得したItemに対してどのような後処理を行うかを指定します。フレームワーク側では、Printerという実装クラスを用意しており、コンソールに出力することができます。今回の要件では、csv出力を行いたいため、AuthorCsvWriterクラスを用意します。
+初期化処理のopenメソッド、終了時処理のcloseメソッド、データに対する処理のprocessメソッドを実装する必要があります。
 ```java
-package org.example.kaibutsu.magatamapipeline;
-
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVPrinter;
-import org.example.kaibutsu.core.magatamapipeline.MagatamaPipeline;
-import org.example.kaibutsu.core.tsuchigumo.Magatama;
-import org.example.kaibutsu.magatama.Author;
-
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Writer;
-
-public class WriteCsvAuthor implements MagatamaPipeline {
+public class AuthorCsvWriter implements ItemPipeline {
     private CSVPrinter csvPrinter;
 
     @Override
@@ -124,29 +120,25 @@ public class WriteCsvAuthor implements MagatamaPipeline {
     }
 
     @Override
-    public Magatama processMagatama(Magatama magatama) {
+    public Item process(Item item) {
         try {
-            Author author = (Author) magatama;
+            Author author = (Author) item;
             csvPrinter.printRecord(author.name, author.birthday, author.bio);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        return magatama;
+        return item;
     }
 }
 ```
 
-### 実行方法
-設定ファイル`quote.properties`をresourcesディレクトリに用意します。
+### 設定ファイル
+設定ファイルでは、以下の項目を指定します。
 ```
-tsuchigumo=org.example.kaibutsu.tsuchigumo.QuoteTsuchigumo
-dynamic=false
-magatamaPipelines=PrintPipeline,WriteCsvAuthor
-interval=1000
-tsuchigumoPackage=org.example.kaibutsu.tsuchigumo
-magatamaPipelinesPackage=org.example.kaibutsu.magatamapipeline
+parser=QuoteParser //使用するParser実装クラス
+dynamic=false //静的ページを取得するかどうか
+itemPipelines=Printer,AuthorCsvWriter //使用するItemPipeline実装クラス
+interval=1000 //SchedulerからDownloaderにリクエストを渡す間隔。ミリ秒
+parserPackage=org.example.kaibutsu.parser //Parser実装クラスのパッケージ
+itemPipelinesPackage=org.example.kaibutsu.itempipeline //ItemPipeline実装クラスのパッケージ
 ```
-この設定により、`QuoteTsuchigumo`クラスが最初のリクエストを生成し、`https://quotes.toscrape.com`からデータを取得し始めます。取得したデータは`Author`クラスのインスタンスとして処理され、最終的にCSVファイルに保存されます。
-
-Kaibutsuを使用してクローリングを開始するには、上記のカスタムクラスと設定ファイルを準備し、`Kaibutsu`のmainメソッドを実行します。
-引数では、設定ファイルの名前（上記例の場合、`quote`）を指定してください。

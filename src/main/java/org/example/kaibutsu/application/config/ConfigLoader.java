@@ -1,4 +1,4 @@
-package org.example.kaibutsu.config;
+package org.example.kaibutsu.application.config;
 
 import java.io.IOException;
 import java.io.InputStream;

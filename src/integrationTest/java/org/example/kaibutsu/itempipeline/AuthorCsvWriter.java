@@ -1,16 +1,16 @@
-package org.example.kaibutsu.magatamapipeline;
+package org.example.kaibutsu.itempipeline;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
-import org.example.kaibutsu.core.magatamapipeline.MagatamaPipeline;
-import org.example.kaibutsu.core.tsuchigumo.Magatama;
-import org.example.kaibutsu.magatama.Author;
+import org.example.kaibutsu.core.itempipeline.ItemPipeline;
+import org.example.kaibutsu.core.parser.Item;
+import org.example.kaibutsu.item.Author;
 
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
 
-public class WriteCsvAuthor implements MagatamaPipeline {
+public class AuthorCsvWriter implements ItemPipeline {
     private CSVPrinter csvPrinter;
 
     @Override
@@ -34,13 +34,13 @@ public class WriteCsvAuthor implements MagatamaPipeline {
     }
 
     @Override
-    public Magatama processMagatama(Magatama magatama) {
+    public Item process(Item item) {
         try {
-            Author author = (Author) magatama;
+            Author author = (Author) item;
             csvPrinter.printRecord(author.name, author.birthday, author.bio);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        return magatama;
+        return item;
     }
 }
