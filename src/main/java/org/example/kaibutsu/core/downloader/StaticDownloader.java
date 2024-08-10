@@ -18,36 +18,36 @@ public class StaticDownloader implements Downloader {
             .build();
 
     @Override
-    public Mono<Response> download(Request request) {
-        return download(request, 0);
+    public Mono<DownloaderResponse> download(DownloaderRequest downloaderRequest) {
+        return download(downloaderRequest, 0);
     }
 
-    private Mono<Response> download(Request request, int redirectCount) {
+    private Mono<DownloaderResponse> download(DownloaderRequest downloaderRequest, int redirectCount) {
         return webClient.get()
-                .uri(request.getUrl())
+                .uri(downloaderRequest.getUrl())
                 .exchangeToMono(clientResponse -> {
                     if (clientResponse.statusCode().isError()) {
-                        return clientResponse.createException().flatMap(ex -> Mono.error(new DownloaderException("レスポンスのステータスコードが不正です。リクエスト：" + request, ex)));
+                        return clientResponse.createException().flatMap(ex -> Mono.error(new DownloaderException("レスポンスのステータスコードが不正です。リクエスト：" + downloaderRequest, ex)));
                     } else if (clientResponse.statusCode().is3xxRedirection()) {
                         String newUrl = clientResponse.headers().header("Location").stream().findFirst().orElse(null);
                         if (newUrl == null) {
-                            return Mono.error(new DownloaderException("リダイレクト先のURLが見つかりませんでした。リクエスト：" + request));
+                            return Mono.error(new DownloaderException("リダイレクト先のURLが見つかりませんでした。リクエスト：" + downloaderRequest));
                         }
                         if (redirectCount >= MAX_REDIRECTS) {
-                            return Mono.error(new DownloaderException("リダイレクトの上限回数に達しました。リクエスト：" + request));
+                            return Mono.error(new DownloaderException("リダイレクトの上限回数に達しました。リクエスト：" + downloaderRequest));
                         }
-                        Request newRequest = request.cloneWithNewUrl(newUrl);
-                        return download(newRequest, redirectCount + 1);
+                        DownloaderRequest newDownloaderRequest = downloaderRequest.cloneWithNewUrl(newUrl);
+                        return download(newDownloaderRequest, redirectCount + 1);
                     } else {
                         return clientResponse.bodyToMono(byte[].class)
-                                .map(body -> new Response(
-                                        request.getUrl(),
+                                .map(body -> new DownloaderResponse(
+                                        downloaderRequest.getUrl(),
                                         body,
-                                        request
+                                        downloaderRequest
                                 ));
                     }
                 })
-                .onErrorResume(e -> Mono.error(new DownloaderException("ダウンロード中にエラーが発生しました。リクエストURL：" + request.getUrl(), e)));
+                .onErrorResume(e -> Mono.error(new DownloaderException("ダウンロード中にエラーが発生しました。リクエストURL：" + downloaderRequest.getUrl(), e)));
     }
 
     @Override

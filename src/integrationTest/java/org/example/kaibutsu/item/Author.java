@@ -1,8 +1,8 @@
-package org.example.kaibutsu.magatama;
+package org.example.kaibutsu.item;
 
-import org.example.kaibutsu.core.tsuchigumo.Magatama;
+import org.example.kaibutsu.core.parser.Item;
 
-public class Author implements Magatama {
+public class Author implements Item {
     public String name;
     public String birthday;
     public String bio;
